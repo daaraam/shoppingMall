@@ -8,6 +8,7 @@ import Home from './Pages/Home';
 import MyCart from './Pages/MyCart';
 import NewProducts from './Pages/NewProducts';
 import ProductDetail from './Pages/ProductDetail';
+import ProtectedRoute from './Pages/ProtectedRoute';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 
@@ -18,9 +19,23 @@ const router = createBrowserRouter([
 		errorElement: <ErrorPage />,
 		children: [
 			{ index: true, path: '/', element: <Home /> },
-			{ path: '/carts', element: <MyCart /> },
+			{
+				path: '/carts',
+				element: (
+					<ProtectedRoute>
+						<MyCart />
+					</ProtectedRoute>
+				),
+			},
 			{ path: '/products', element: <AllProducts /> },
-			{ path: '/products/new', element: <NewProducts /> },
+			{
+				path: '/products/new',
+				element: (
+					<ProtectedRoute requireAdmin>
+						<NewProducts />
+					</ProtectedRoute>
+				),
+			},
 			{ path: '/products/:id', element: <ProductDetail /> },
 		],
 	},

@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { GoogleAuthProvider, getAuth, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { get, getDatabase, ref } from 'firebase/database';
 
 const firebaseConfig = {
 	apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -12,6 +13,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
 
+// 자동로그인 방지
+provider.setCustomParameters({
+	prompt: 'select_account',
+});
+
+const database = getDatabase(app);
+
 export function login() {
 	signInWithPopup(auth, provider).catch(console.error);
 }
@@ -21,7 +29,23 @@ export function logout() {
 }
 
 export function userStateChange(callback) {
-	onAuthStateChanged(auth, user => {
-		callback(user);
+	onAuthStateChanged(auth, async user => {
+		const updatedUser = user ? await adminUser(user) : user;
+		callback(updatedUser);
 	});
 }
+
+function adminUser(user) {
+	return get(ref(database, 'admins')) //
+		.then(snapshot => {
+			if (snapshot.exists()) {
+				const admins = snapshot.val();
+				const isAdmin = admins.includes(user.uid);
+				return { ...user, isAdmin };
+			}
+			return user;
+		});
+}
+
+/* 사용자가 어드민 권한이 있는지 확인해서 
+있으면 true, 없으면 false {...user, isAdmin : true / false}  */
