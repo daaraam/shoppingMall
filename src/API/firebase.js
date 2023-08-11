@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { GoogleAuthProvider, getAuth, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { get, getDatabase, ref } from 'firebase/database';
+import { get, getDatabase, ref, set } from 'firebase/database';
+import uuid from 'react-uuid';
 
 const firebaseConfig = {
 	apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -12,25 +13,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
+const database = getDatabase(app);
 
 // 자동로그인 방지
 provider.setCustomParameters({
 	prompt: 'select_account',
 });
 
-const database = getDatabase(app);
-
 export function login() {
 	signInWithPopup(auth, provider).catch(console.error);
 }
 
 export function logout() {
-	return signOut(auth).catch(console.error);
+	signOut(auth).catch(console.error);
 }
 
 export function userStateChange(callback) {
 	onAuthStateChanged(auth, async user => {
-		const updatedUser = user ? await adminUser(user) : user;
+		const updatedUser = user ? await adminUser(user) : null;
 		callback(updatedUser);
 	});
 }
@@ -47,5 +47,13 @@ function adminUser(user) {
 		});
 }
 
-/* 사용자가 어드민 권한이 있는지 확인해서 
-있으면 true, 없으면 false {...user, isAdmin : true / false}  */
+export async function addNewProduct(product, image) {
+	const id = uuid();
+	return set(ref(database, `products/${id}`), {
+		...product,
+		id,
+		price: parseInt(product.price),
+		image,
+		option: product.option.split(','),
+	});
+}
